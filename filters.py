@@ -114,6 +114,7 @@ def get_directional_filter(fname):
     Get the directional filters given the name. Available filter names:
 
     - haar
+    - dmaxflat4
 
     :param fname: str, name of the filter.
     :return: list, a list (h0, h1, g0, g1) with the filter whose type is ndarray.
@@ -143,6 +144,32 @@ def get_directional_filter(fname):
 
         g0 = np.array(g0) / np.sqrt(2)
         g1 = np.array(g1) / np.sqrt(2)
+
+    elif fname == "dmaxflat4":
+        M1 = 1/math.sqrt(2)
+        M2 = M1
+        k1 = 1 - math.sqrt(2)
+        k3 = k1
+        k2 = M1
+
+        h = np.array([[0.25*k2*k3, 0.5*k2, 1+0.5*k2*k3]]) * M1
+        h1 = np.fliplr(h[:, :-1])
+        h = np.concatenate((h, h1), axis=1)
+
+        g = np.array([[-0.125*k1*k2*k3, 0.25*k1*k2, (-0.5*k1-0.5*k3-0.375*k1*k2*k3), 1+0.5*k1*k2]]) * M2
+        g1 = np.fliplr(g[:, :-1])
+        g = np.concatenate((g, g1), axis=1)
+
+        B = dmaxflat(4, 0)
+        h0 = utils.mcclellan_transform(h, B)
+        g0 = utils.mcclellan_transform(g, B)
+
+        h0 = np.sqrt(2) * (h0 / np.sum(h0))
+        g0 = np.sqrt(2) * (g0 / np.sum(g0))
+
+        h1 = utils.modulate(g0, 'b')
+        g1 = utils.modulate(h0, 'b')
+
     else:
         print("fname not in the list")
         h0, h1, g0, g1 = 0, 0, 0, 0
@@ -181,3 +208,147 @@ def get_parallelogram_filters(h0, h1):
         y2[i] = utils.resampz(y2[i], i)
 
     return y1, y2
+
+
+def dmaxflat(N, d):
+    """
+    Computes the 2 dimensional diamond flat filter of order N. The filters are not separable and 'd' is the (0, 0)
+    coefficient, being 0 or 1 depending on use.
+
+    Available values for N: 1, 2, 3, 4, 5, 6, 7
+
+    :param N: int, the order of the filter
+    :param d: int, 0 or 1, the (0, 0) coefficient of the filter.
+    :return: ndarray, the 2 dimensional diamond flat filter of order N
+    """
+
+    if N == 1:
+        h = [
+            [0, 1, 0],
+            [1, 0, 1],
+            [0, 1, 0]
+        ]
+
+        h = np.array(h)
+        h = h / 4
+        h[1, 1] = d
+
+    elif N == 2:
+        h = [
+            [0, -1, 0],
+            [-1, 0, 10],
+            [0, 10, 0]
+        ]
+
+        h = np.array(h)
+        h1 = np.fliplr(h[:, :-1])
+        h = np.concatenate((h, h1), axis=1)
+
+        h2 = np.flipud(h[:-1, :]) / 32
+        h = np.concatenate((h, h2), axis=0)
+        h[2, 2] = d
+
+    elif N == 3:
+        h = [
+            [0, 3, 0, 2],
+            [3, 0, -27, 0],
+            [0, -27, 0, 174],
+            [2, 0, 174, 0]
+        ]
+
+        h = np.array(h)
+        h1 = np.fliplr(h[:, :-1])
+        h = np.concatenate((h, h1), axis=1)
+
+        h2 = np.flipud(h[:-1, :]) / 512
+        h = np.concatenate((h, h2), axis=0)
+        h[3, 3] = d
+
+    elif N == 4:
+        h = [
+            [0, -5, 0, -3, 0],
+            [-5, 0, 52, 0, 34],
+            [0, 52, 0, -276, 0],
+            [-3, 0, -276, 0, 1454],
+            [0, 34, 0, 1454, 0]
+        ]
+
+        h = np.array(h)
+        h = h / (2**12)
+        h1 = np.fliplr(h[:, :-1])
+        h = np.concatenate((h, h1), axis=1)
+
+        h2 = np.flipud(h[:-1, :])
+        h = np.concatenate((h, h2), axis=0)
+
+        h[4, 4] = d
+
+    elif N == 5:
+        h = [
+            [0, 35, 0, 20, 0, 18],
+            [35, 0, -425, 0, -250, 0],
+            [0, -425, 0, 2500, 0, 1610],
+            [20, 0, 2500, 0, -10200, 0],
+            [0, -250, 0, -10200, 0, 47780],
+            [18, 0, 1610, 0, 47780, 0]
+        ]
+
+        h = np.array(h)
+        h = h / (2**17)
+        h1 = np.fliplr(h[:, :-1])
+        h = np.concatenate((h, h1), axis=1)
+
+        h2 = np.flipud(h[:-1, :])
+        h = np.concatenate((h, h2), axis=0)
+        h[5, 5] = d
+
+    elif N == 6:
+        h = [
+            [0, -63, 0, -35, 0, -30, 0],
+            [-63, 0, 882, 0, 495, 0, 444],
+            [0, 882, 0, -5910, 0, -3420, 0],
+            [-35, 0, -5910, 0, 25875, 0, 16460],
+            [ 0, 495, 0, 25875, 0, -89730, 0],
+            [-30, 0, -3420, 0, -89730, 0, 389112],
+            [0, 44, 0, 16460, 0, 389112, 0]
+        ]
+
+        h = np.array(h)
+        h = h / (2**20)
+        h1 = np.fliplr(h[:, :-1])
+        h = np.concatenate((h, h1), axis=1)
+
+        h2 = np.flipud(h[:-1, :])
+        h = np.concatenate((h, h2), axis=0)
+        h[6, 6] = d
+
+    elif N == 7:
+        h = [
+            [0, 231, 0, 126, 0, 105, 0, 100],
+            [231, 0, -3675, 0, -2009, 0, -1715, 0],
+            [0, -3675, 0, 27930, 0, 15435, 0, 13804],
+            [126, 0, 27930, 0, -136514, 0, -77910, 0],
+            [0, -2009, 0, -136514, 0, 495145, 0, 311780],
+            [105, 0, 15435, 0, 495145, 0, -1535709, 0],
+            [0, -1715, 0, -77910, 0, -1535709, 0, 6305740],
+            [100, 0, 13804, 0, 311780, 0, 6305740, 0]
+        ]
+
+        h = np.array(h)
+        h = h / (2**24)
+        h1 = np.fliplr(h[:, :-1])
+        h = np.concatenate((h, h1), axis=1)
+
+        h2 = np.flipud(h[:-1, :])
+        h = np.concatenate((h, h2), axis=0)
+        h[7, 7] = d
+
+    else:
+        print("Error, degree N not available.")
+        h = 0
+
+    return h
+
+
+
+
