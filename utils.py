@@ -278,6 +278,8 @@ def upsample2df(h, p):
     g = np.zeros((2**p * m, 2**p * n))
     g[::2**p, ::2**p] = h
 
+    return g
+
 
 def efilter2(x, h, extmod='per', shift=(0, 0)):
     """
@@ -307,6 +309,8 @@ def extend2(x, ru, rd, cl, cr, extmod):
     Computes the 2 dimensional extension of x.
     Supported extensions:
         - per -> periodic extension
+        - qper_row
+        - qper_col
 
     :param x: ndarray, the input image
     :param ru: int, amount of extension (up) for the rows
@@ -316,7 +320,7 @@ def extend2(x, ru, rd, cl, cr, extmod):
     :param extmod: str, extension mode
     :return: ndarray, the extended array
     """
-    rx, cx = int(x.shape)
+    rx, cx = int(x.shape[0]), int(x.shape[1])
 
     if extmod == "per":
         I = get_permutation_indices(rx, ru, rd)
@@ -388,8 +392,8 @@ def zconv2(x, h, S):
     :param S: ndarray, the 2x2 upsampling matrix
     :return: ndarray, the convolved image
     """
-    M, N = int(x.shape)
-    P, Q = int(h.shape)
+    M, N = int(x.shape[0]), int(x.shape[1])
+    P, Q = int(h.shape[0]), int(h.shape[1])
 
     M0 = int(S[0, 0])
     M1 = int(S[0, 1])
@@ -423,7 +427,7 @@ def zconv2(x, h, S):
                     if indexx < 0:
                         indexx = indexx + M
                     if indexx > M-1:
-                        intexx = indexx - M
+                        indexx = indexx - M
                     indexy = indexy - M3
                     if indexy < 0:
                         indexy = indexy + N

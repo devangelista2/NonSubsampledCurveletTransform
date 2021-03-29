@@ -1,9 +1,5 @@
 import numpy as np
-import matplotlib.pyplot as plt
 import math
-import scipy
-from scipy.signal import convolve, convolve2d, fftconvolve
-from scipy.fft import fft
 import utils
 
 

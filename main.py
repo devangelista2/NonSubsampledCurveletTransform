@@ -1,9 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import math
-import scipy
-from scipy.signal import convolve, convolve2d, fftconvolve
-from scipy.fft import fft
 from skimage import data
 import filters
 import utils
@@ -31,37 +28,50 @@ y0, y1 = filters.get_parallelogram_filters(u0, u1)
 dfb_filters = (u0, u1, y0, y1)
 
 # Define parameters for the transform
-levels = [0, 1, 3]
+levels = [0]
 n_levels = len(levels)
-n_index = n_levels + 1
-
-[x_lo, x_hi] = transform.NSLP_DEC(x, h0, h1, 0)
+n_index = n_levels
 
 
 # Initialize the output
-y = np.zeros((1, n_index))
+y = list()
 
 for i in range(n_levels):
 
     # Non-Subsampled Laplacian Pyramid Decomposition
-    [x_lo, x_hi] = transform.NSLP(x, h0, h1, i)
+    [x_lo, x_hi] = transform.NSLP_DEC(x, h0, h1, i)
+
+    if levels[n_index - 1] > 0:
+        # Nonsubsampled DFB decomposition on the bandpass image
+        xhi_dir = transform.NSDFB_DEC(x_hi, dfb_filters, levels[n_index - 1])
+        y.append(xhi_dir)
+
+    else:
+        y.append(x_hi)
+
+    n_index = n_index - 1
+
+    # Prepare the next iteration
+    x = x_lo
+
+y.append(x)
 
 
-"""
-# Filter the image x in the two components
-xl = convolve2d(x, h0)
-xh = convolve2d(x, h1)
+# Get the components out of y
+x_hi, x_lo = y # In y the band frequencies are reversed
+
+print(x_hi.shape)
+print(x_lo.shape)
 
 # Show the two components
 plt.subplot(1, 2, 1)
-plt.imshow(xl)
+plt.imshow(x_lo)
 plt.title("Low pass")
 plt.gray()
 
 plt.subplot(1, 2, 2)
-plt.imshow(xh)
+plt.imshow(x_hi)
 plt.title("High pass")
 plt.gray()
 
 plt.show()
-"""
