@@ -1,5 +1,5 @@
 import numpy as np
-from scipy.signal import convolve, convolve2d, fftconvolve
+from scipy.signal import convolve2d, fftconvolve
 import utils
 
 
@@ -134,4 +134,19 @@ def NSSFB_DEC(x, h0, h1, M=np.eye(2)):
         y2 = 0
 
     return y1, y2
+
+
+def NSLP_REC(y, g0, g1):
+    """
+    Computes the inverse NonSubsampled Laplacian Pyramid of y, given the reconstruction filters g0, g1.
+
+    :param y: tuple, a tuple of length L+1 that contains the high pass bands at each decomposition level
+    :param g0: ndarray, the lowpass reconstruction filter
+    :param g1: ndarray, the highpass reconstruction filter
+    :return: ndarray, the reconstructed image
+    """
+    x_hi, x_lo = y
+    shift = (1, 1)
+    x = convolve2d(utils.symext(x_lo, g0, shift), g0, 'valid') + convolve2d(utils.symext(x_hi, g1, shift), g1, 'valid')
+    return x
 
